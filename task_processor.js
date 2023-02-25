@@ -51,7 +51,8 @@ async function exec({ botName, partyCode }) {
     await page.click(playSelector);
     await page.mouse.move(10, 10);
     await page.mouse.move(20, 20);
-    const statsSelector = 'div#stats';
-    await page.waitForSelector(statsSelector, { visible: true, timeout: 60000 });
+    // const statsSelector = 'div#stats';
+    // await page.waitForSelector(statsSelector, { visible: true, timeout: 60000 });
+    await page.waitForFunction(delay, {}, 60000);
     await browser.close();
 }
