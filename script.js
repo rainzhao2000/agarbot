@@ -1,4 +1,4 @@
-import { WorkerPool } from './worker-pool.js';
+import WorkerPool from './worker_pool.js';
 import * as os from 'os';
 
 const args = {
@@ -16,8 +16,7 @@ const args = {
         let finished = 0;
         for (let i = 1; i <= args.concurrency; ++i) {
             pool.runTask({ botName: `M${i}`, partyCode: args.partyCode }, (err, res) => {
-                if (err) console.error(err);
-                else console.log(res);
+                console.log(i, err, res);
                 if (++finished === args.concurrency) pool.close();
             });
         }

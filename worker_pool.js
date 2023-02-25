@@ -1,10 +1,7 @@
-// reference: https://nodejs.org/docs/latest-v12.x/api/async_hooks.html#async-resource-worker-pool
-
-import { AsyncResource } from 'async_hooks';
-import { EventEmitter } from 'events';
-import * as path from 'path';
-import { fileURLToPath } from 'url';
-import { Worker } from 'worker_threads';
+import { AsyncResource } from 'node:async_hooks';
+import { EventEmitter } from 'node:events';
+import path from 'node:path';
+import { Worker } from 'node:worker_threads';
 
 const kTaskInfo = Symbol('kTaskInfo');
 const kWorkerFreedEvent = Symbol('kWorkerFreedEvent');
@@ -21,19 +18,29 @@ class WorkerPoolTaskInfo extends AsyncResource {
   }
 }
 
-export class WorkerPool extends EventEmitter {
+export default class WorkerPool extends EventEmitter {
   constructor(numThreads) {
     super();
     this.numThreads = numThreads;
     this.workers = [];
     this.freeWorkers = [];
+    this.tasks = [];
 
     for (let i = 0; i < numThreads; i++)
       this.addNewWorker();
+
+    // Any time the kWorkerFreedEvent is emitted, dispatch
+    // the next task pending in the queue, if any.
+    this.on(kWorkerFreedEvent, () => {
+      if (this.tasks.length > 0) {
+        const { task, callback } = this.tasks.shift();
+        this.runTask(task, callback);
+      }
+    });
   }
 
   addNewWorker() {
-    const worker = new Worker(path.resolve(path.dirname(fileURLToPath(import.meta.url)), 'worker-thread.js'));
+    const worker = new Worker(new URL('task_processor.js', import.meta.url));
     worker.on('message', (result) => {
       // In case of success: Call the callback that was passed to `runTask`,
       // remove the `TaskInfo` associated with the Worker, and mark it as free
@@ -63,7 +70,7 @@ export class WorkerPool extends EventEmitter {
   runTask(task, callback) {
     if (this.freeWorkers.length === 0) {
       // No free threads, wait until a worker thread becomes free.
-      this.once(kWorkerFreedEvent, () => this.runTask(task, callback));
+      this.tasks.push({ task, callback });
       return;
     }
 
