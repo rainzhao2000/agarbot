@@ -1,5 +1,4 @@
-
-import puppeteer from 'puppeteer';
+import puppeteer from "puppeteer";
 
 async function delay(ms) {
     await new Promise((res) => {
@@ -12,16 +11,11 @@ function clearInput(inputSelector) {
     document.querySelector(inputSelector).value = "";
 }
 
-export default async function execBot({ botName, partyCode }) {
-    const config = {
-        headless: true
-    };
-    const browser = await puppeteer.launch(config);
+export default async function execBot({ browserWSEndpoint, botName, partyCode }) {
+    const browser = await puppeteer.connect({ browserWSEndpoint });
     const page = await browser.newPage();
     await page.setDefaultNavigationTimeout(0);
     await page.goto('https://agar.io/');
-    // const connectionSelector = 'div#blocker>span.connecting-text';
-    // await page.waitForSelector(connectionSelector, { timeout: 60000 });
     await page.waitForFunction(delay, {}, 5000);
     const joinSelector = 'button.party-join';
     await page.waitForSelector(joinSelector);
@@ -44,5 +38,5 @@ export default async function execBot({ botName, partyCode }) {
     await page.mouse.move(20, 20);
     const statsSelector = 'div#stats';
     await page.waitForSelector(statsSelector, { visible: true, timeout: 60000 });
-    await browser.close();
+    await page.close();
 }
