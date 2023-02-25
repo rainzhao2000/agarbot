@@ -1,3 +1,5 @@
+Setup: `npm install`
+
 Example execute in background:
 
 ```bash
